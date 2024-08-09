@@ -1,0 +1,60 @@
+-- LocalScript inside StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+local camera = workspace.CurrentCamera
+camera.CameraType = Enum.CameraType.Scriptable
+
+local render_stepped_connection = nil
+
+local function update_camera()
+	--[[
+	Updates camera position and rotation
+	
+	]]
+	local character = player.Character
+	if character and character:FindFirstChild("HumanoidRootPart") then
+		local rootPart = character.HumanoidRootPart
+		local camera_distance = 30
+		local cameraPosition = rootPart.Position + Vector3.new(0, camera_distance, 0)
+		local lookAtPosition = rootPart.Position
+
+		-- Rotate the camera by 180 degrees around the Z axis
+		local rotation = CFrame.Angles(0, 0, math.rad(180))
+		camera.CFrame = CFrame.new(cameraPosition, lookAtPosition) * rotation
+	end
+end
+
+local function initialize_character(character)
+	--[[
+	Connects camera updates to a newly-initialized character
+	
+	]]
+	
+	-- Disconnect any existing RenderStepped connection to avoid duplicates
+	if render_stepped_connection then
+		render_stepped_connection:Disconnect()
+	end
+
+	-- Connect the updateCamera function to the RenderStepped event
+	render_stepped_connection = RunService.RenderStepped:Connect(update_camera)
+end
+
+-- Handle the player's character being added (for respawns)
+player.CharacterAdded:Connect(initialize_character)
+
+-- Handle the player's initial character
+if player.Character then
+	initialize_character(player.Character)
+end
+
+-- Disable default mouse movement for the camera
+UserInputService.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		-- Override camera movement
+		update_camera()
+	end
+end)
